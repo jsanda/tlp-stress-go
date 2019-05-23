@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/gocql/gocql"
+	"github.com/jsanda/tlp-stress-go/pkg/flags"
 	"log"
 
 	"github.com/spf13/cobra"
@@ -29,22 +30,13 @@ var runCmd = &cobra.Command{
 }
 
 func exec(cmd *cobra.Command) {
-	contactPoint, err := cmd.Flags().GetString("host")
-	if err != nil {
-		log.Fatalf("Failed to get value of host flag: %s", err)
-	}
+	flags.Init(cmd)
 
-	keyspace, err := cmd.Flags().GetString("keyspace")
-	if err != nil {
-		log.Fatalf("Failed to get value of keyspace flag: %s", err)
-	}
-
-	dropKeyspace, err := cmd.Flags().GetBool("drop")
-	if err != nil {
-		log.Fatalf("Failed to get value of drop flag: %s", err)
-	}
-
-	username, password := getUsernameAndPassword(cmd)
+	contactPoint := flags.GetString("host")
+	keyspace := flags.GetString("keyspace")
+	dropKeyspace := flags.GetBool("drop")
+	username := flags.GetString("username")
+	password := flags.GetString("password")
 
 	cluster := gocql.NewCluster(contactPoint)
 	//cluster.Keyspace = keyspace
@@ -56,23 +48,16 @@ func exec(cmd *cobra.Command) {
 	}
 
 	createKeyspace(session, keyspace, dropKeyspace)
+	session.Close()
+
+	cluster.Keyspace = keyspace
+	session, err = cluster.CreateSession()
+	if err != nil {
+		log.Fatalf("Failed to initialize Cassandra session: %s", err)
+	}
 
 	session.Close()
 	log.Println("Done!")
-}
-
-func getUsernameAndPassword(cmd *cobra.Command) (string, string) {
-	username, err := cmd.Flags().GetString("username")
-	if err != nil {
-		log.Fatalf("Failed to parse username flag: %s", err)
-	}
-
-	password, err := cmd.Flags().GetString("password")
-	if err != nil {
-		log.Fatalf("Faield to parse password flag: %s", err)
-	}
-
-	return username, password
 }
 
 func createKeyspace(session *gocql.Session, keyspace string, dropKeyspace bool) {
