@@ -24,3 +24,23 @@ func TestHumanReadable(t *testing.T) {
 		}
 	}
 }
+
+func TestHumanReadableInvalid(t *testing.T) {
+	value := "55b7"
+	actual, err := HumanReadable(value)
+	if err == nil {
+		t.Errorf("HumanReadable(%s): expected error, actual %d", value, actual)
+	}
+
+	value = "m"
+	actual, err = HumanReadable(value)
+	if err == nil {
+		t.Errorf("HumanReadable(%s): expected error, actual %d", value, actual)
+	}
+
+	value = "10k4b"
+	actual, err = HumanReadable(value)
+	if err == nil {
+		t.Errorf("HumanReadable(%s): expected error, actual %d", value, actual)
+	}
+}
