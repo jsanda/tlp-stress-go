@@ -1,13 +1,18 @@
 package profiles
 
-import "github.com/gocql/gocql"
+import (
+	"github.com/jsanda/tlp-stress-go/pkg/generators"
+)
 
 type StressProfile interface {
-	Prepare(session *gocql.Session) error
+	// gocql automatically prepares queries so we do not need to port this
+	//Prepare(session *gocql.Session) error
 
 	Schema() []string
 
 	GetRunner() StressRunner
+
+	GetFieldGenerators() map[*generators.Field]generators.FieldGenerator
 }
 
 type StressRunner interface {
@@ -32,4 +37,9 @@ var plugins = map[string]Plugin{
 
 func GetPlugins() map[string]Plugin {
 	return plugins
+}
+
+func GetPlugin(name string) (*Plugin, bool) {
+	plugin, ok := plugins[name]
+	return &plugin, ok
 }
