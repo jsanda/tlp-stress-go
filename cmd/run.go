@@ -14,7 +14,9 @@ func init() {
 	runCmd.Flags().String("username", "cassandra", "The username with which to authenticate")
 	runCmd.Flags().String("password", "cassandra", "The password with which to authenticate")
 	runCmd.Flags().String("profile", "BasicTimeSeries", "The stress profile to execute")
-
+	runCmd.Flags().String("duration", "", "Duration of the stress test.  Expressed in format 1d 3h 15m")
+	runCmd.Flags().Int("iterations", 0, "Number of operations to run")
+	runCmd.Flags().Int64("populate", 0, "Pre-population the DB with N rows before starting load test")
 	rootCmd.AddCommand(runCmd)
 }
 
@@ -40,6 +42,7 @@ func exec(cmd *cobra.Command) {
 			Username: flags.GetString("username"),
 			Password: flags.GetString("password"),
 		},
+		Populate: flags.GetInt64("populate"),
 	})
 
 	runtime.Exec()

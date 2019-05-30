@@ -26,3 +26,11 @@ func GetBool(name string) bool {
 	}
 	return value
 }
+
+func GetInt64(name string) int64 {
+	value, err := cmd.Flags().GetInt64(name)
+	if err != nil {
+		log.Fatalf("Failed to get value of %s flag: %s", name, err)
+	}
+	return value
+}
