@@ -29,3 +29,7 @@ func (b *basicTimeSeries) GetFieldGenerators() map[*generators.Field]generators.
 		&generators.Field{Table: "sensor_data", Name: "data"}: generators.NewRandom(100, 200),
 	}
 }
+
+func (b *basicTimeSeries) GetPopulationOption() PopulationOption {
+	return Standard{}
+}

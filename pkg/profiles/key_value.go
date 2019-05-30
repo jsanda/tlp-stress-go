@@ -19,3 +19,7 @@ func (k *keyValue) GetRunner() StressRunner {
 func (k *keyValue) GetFieldGenerators() map[*generators.Field]generators.FieldGenerator {
 	return nil
 }
+
+func (k * keyValue) GetPopulationOption() PopulationOption {
+	return Standard{}
+}

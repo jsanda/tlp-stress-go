@@ -4,6 +4,17 @@ import (
 	"github.com/jsanda/tlp-stress-go/pkg/generators"
 )
 
+type PopulationOption interface {}
+
+type Standard struct{
+	populationOption PopulationOption
+}
+
+type Custom struct{
+	populationOption PopulationOption
+	Rows uint64
+}
+
 type StressProfile interface {
 	// gocql automatically prepares queries so we do not need to port this
 	//Prepare(session *gocql.Session) error
@@ -13,6 +24,8 @@ type StressProfile interface {
 	GetRunner() StressRunner
 
 	GetFieldGenerators() map[*generators.Field]generators.FieldGenerator
+
+	GetPopulationOption() PopulationOption
 }
 
 type StressRunner interface {

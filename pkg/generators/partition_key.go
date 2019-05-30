@@ -29,3 +29,5 @@ func Random(prefix string) PartitionKeyGenerator {
 	}
 	return PartitionKeyGenerator{GenFunc:genFunc, Prefix:prefix}
 }
+
+// TODO func Normal()
