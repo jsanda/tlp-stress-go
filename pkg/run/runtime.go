@@ -2,12 +2,19 @@ package run
 
 import (
 	"github.com/gocql/gocql"
+	"github.com/jsanda/tlp-stress-go/pkg/generators"
+	"github.com/jsanda/tlp-stress-go/pkg/profiles"
 	"log"
+	"gopkg.in/cheggaaa/pb.v1"
+	"time"
 )
 
 type RuntimeConfig struct {
 	Profile string
 	CqlConfig
+	Populate int64
+	Partitions int64
+	Concurrency int64
 }
 
 type CqlConfig struct {
@@ -27,6 +34,11 @@ func NewRuntime(cfg *RuntimeConfig) *Runtime {
 }
 
 func (r *Runtime) Exec() {
+	plugin, ok := profiles.GetPlugin(r.Profile)
+	if !ok {
+		log.Fatalf("%s is not a valid stress profile", r.Profile)
+	}
+
 	cluster := gocql.NewCluster(r.CqlConfig.Hosts...)
 	cluster.Authenticator = gocql.PasswordAuthenticator{Username: r.CqlConfig.Username, Password: r.CqlConfig.Password}
 	session, err := cluster.CreateSession()
@@ -42,9 +54,19 @@ func (r *Runtime) Exec() {
 	if err != nil {
 		log.Fatalf("Failed to initialize Cassandra session: %s", err)
 	}
+	defer session.Close()
 
-	session.Close()
-	log.Println("Done!")
+	createSchema(session, plugin)
+	// TODO implement executeAdditionalCql as done in kotlin version
+
+	//fieldRegistry := createFieldRegistry(plugin)
+
+	// TODO create metrics
+
+	runner := createRunners()
+
+	populateData(plugin, runner, r.Populate)
+	//log.Println("Done!")
 }
 
 func (r *Runtime) createKeyspace(session *gocql.Session, ) {
@@ -60,5 +82,48 @@ func (r *Runtime) createKeyspace(session *gocql.Session, ) {
 			` WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}`
 	if err := session.Query(query, r.CqlConfig.Keyspace).Exec(); err != nil {
 		log.Fatalf("Failed to create keyspace %s: %s", r.CqlConfig.Keyspace, err)
+	}
+}
+
+func createSchema(session *gocql.Session, plugin *profiles.Plugin) {
+	log.Println("Creating tables...")
+	for _, statement := range plugin.Instance.Schema() {
+		log.Println(statement)
+		if err := session.Query(statement).Exec(); err != nil {
+			log.Fatalf("Failed to execute %s: ", statement, err)
+		}
+	}
+}
+
+func createFieldRegistry(plugin *profiles.Plugin) *generators.Registry {
+	registry := generators.NewRegistry()
+
+	for field, generator := range plugin.Instance.GetFieldGenerators() {
+		registry.SetDefault(field, &generator)
+	}
+
+	// TODO add support for overriding default field generators
+
+	return registry
+}
+
+func populateData(plugin *profiles.Plugin, runner *profileRunner, populate int64) {
+	if populate > 0 {
+		log.Printf("Prepopulating data with %d records per thread\n", populate)
+		done := make(chan struct{})
+		bar := pb.StartNew(int(populate))
+
+		ticker := time.NewTicker(1 * time.Second)
+
+		go func() {
+			for range ticker.C {
+				// TODO hook in metrics here so we can update the progress bard with the count of the population metric
+				bar.Set64(runner.Population)
+			}
+		}()
+
+		go runner.Populate(populate, done)
+
+		<-done
 	}
 }
