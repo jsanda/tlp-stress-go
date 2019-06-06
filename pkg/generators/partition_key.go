@@ -5,9 +5,14 @@ import (
 	"time"
 )
 
-type PartitionKeyGenerator struct {
-	GenFunc func(uint64) uint64
+type PartitionKey struct{
 	Prefix string
+	Id     uint64
+}
+
+type PartitionKeyGenerator struct{
+	GenFunc func(uint64) uint64
+	Prefix  string
 }
 
 func Sequence(prefix string) PartitionKeyGenerator {
@@ -31,3 +36,18 @@ func Random(prefix string) PartitionKeyGenerator {
 }
 
 // TODO func Normal()
+
+func (g *PartitionKeyGenerator) GenerateKey(total uint64, maxId uint64) <-chan *PartitionKey {
+	var i uint64
+	keys := make(chan *PartitionKey)
+
+	go func() {
+		defer close(keys)
+		for i = 0; i < total; i++ {
+			tmp := g.GenFunc(maxId)
+			keys <- &PartitionKey{Prefix: g.Prefix, Id: tmp}
+		}
+	}()
+
+	return keys
+}
