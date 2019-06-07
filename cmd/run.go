@@ -19,6 +19,8 @@ func init() {
 	runCmd.Flags().Int64("populate", 0, "Pre-population the DB with N rows before starting load test")
 	runCmd.Flags().Int64("partitions", 1000000, "Max value of integer component of first partition key")
 	runCmd.Flags().Int64("concurrency", 100, "Concurrent queries allowed.  Increase for larger clusters")
+	runCmd.Flags().String("partitiongenerator", "random", "Method of generating partition keys.  Supports random, normal (gaussian), and sequence.")
+	runCmd.Flags().String("id", "001", "Identifier for this run, will be used in partition keys.  Make unique for when starting concurrent runners.")
 	rootCmd.AddCommand(runCmd)
 }
 
@@ -47,6 +49,8 @@ func exec(cmd *cobra.Command) {
 		Populate: flags.GetInt64("populate"),
 		Partitions: flags.GetInt64("partitions"),
 		Concurrency: flags.GetInt64("concurrency"),
+		PartitionKeyGenerator: flags.GetString("partitiongenerator"),
+		Id:                    flags.GetString("id"),
 	})
 
 	runtime.Exec()

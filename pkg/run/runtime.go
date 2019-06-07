@@ -10,11 +10,13 @@ import (
 )
 
 type RuntimeConfig struct {
-	Profile string
+	Profile               string
 	CqlConfig
-	Populate int64
-	Partitions int64
-	Concurrency int64
+	Populate              int64
+	Partitions            int64
+	Concurrency           int64
+	PartitionKeyGenerator string
+	Id                    string
 }
 
 type CqlConfig struct {
@@ -27,6 +29,16 @@ type CqlConfig struct {
 
 type Runtime struct {
 	RuntimeConfig
+}
+
+type StressCfg struct {
+	Session               *gocql.Session
+	Registry              *generators.Registry
+	Plugin                *profiles.Plugin
+	Concurrency           int64
+	PartitionKeyGenerator string
+	Id                    string
+	Population            int64
 }
 
 func NewRuntime(cfg *RuntimeConfig) *Runtime {
@@ -63,7 +75,17 @@ func (r *Runtime) Exec() {
 
 	// TODO create metrics
 
-	runner := createRunners()
+	stressCfg := &StressCfg{
+		Session: session,
+		Registry: createFieldRegistry(plugin),
+		Plugin: plugin,
+		Concurrency: r.Concurrency,
+		PartitionKeyGenerator: r.PartitionKeyGenerator,
+		Id: r.Id,
+		Population: r.Populate,
+	}
+
+	runner := createRunners(stressCfg)
 
 	populateData(plugin, runner, r.Populate)
 	//log.Println("Done!")
@@ -99,7 +121,7 @@ func createFieldRegistry(plugin *profiles.Plugin) *generators.Registry {
 	registry := generators.NewRegistry()
 
 	for field, generator := range plugin.Instance.GetFieldGenerators() {
-		registry.SetDefault(field, &generator)
+		registry.SetDefault(field, generator)
 	}
 
 	// TODO add support for overriding default field generators

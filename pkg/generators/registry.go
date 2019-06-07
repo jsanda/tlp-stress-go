@@ -18,18 +18,22 @@ type FieldGenerator interface {
 }
 
 type Registry struct {
-	defaults map[*Field]*FieldGenerator
+	defaults map[Field]FieldGenerator
 
-	overrides map[*Field]*FieldGenerator
+	overrides map[Field]FieldGenerator
 }
 
 func NewRegistry() *Registry {
 	return &Registry{
-		defaults: make(map[*Field]*FieldGenerator),
-		overrides: make(map[*Field]*FieldGenerator),
+		defaults: make(map[Field]FieldGenerator),
+		overrides: make(map[Field]FieldGenerator),
 	}
 }
 
-func (r *Registry) SetDefault(field *Field, generator *FieldGenerator) {
+func (r *Registry) SetDefault(field Field, generator FieldGenerator) {
 	r.defaults[field] = generator
+}
+
+func (r *Registry) GetGenerator(table string, field string) FieldGenerator {
+	return r.defaults[Field{Table: table, Name: field}]
 }

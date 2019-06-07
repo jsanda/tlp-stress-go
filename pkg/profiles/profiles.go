@@ -1,6 +1,7 @@
 package profiles
 
 import (
+	"github.com/gocql/gocql"
 	"github.com/jsanda/tlp-stress-go/pkg/generators"
 )
 
@@ -15,21 +16,35 @@ type Custom struct{
 	Rows uint64
 }
 
+type Operation struct {
+	Query *gocql.Query
+}
+
+type Mutation struct {
+	Operation
+}
+
+type Select struct {
+	Operation
+}
+
 type StressProfile interface {
 	// gocql automatically prepares queries so we do not need to port this
 	//Prepare(session *gocql.Session) error
 
 	Schema() []string
 
-	GetRunner() StressRunner
+	GetRunner(registry *generators.Registry, session *gocql.Session) StressRunner
 
-	GetFieldGenerators() map[*generators.Field]generators.FieldGenerator
+	GetFieldGenerators() map[generators.Field]generators.FieldGenerator
 
 	GetPopulationOption() PopulationOption
 }
 
 type StressRunner interface {
+	GetNextMutation(key *generators.PartitionKey) *Mutation
 
+	GetNextSelect(key *generators.PartitionKey) *Select
 }
 
 type Plugin struct {

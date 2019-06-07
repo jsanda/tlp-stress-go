@@ -10,12 +10,16 @@ type PartitionKey struct{
 	Id     uint64
 }
 
+func (p *PartitionKey) GetText() string {
+	return p.Prefix + string(p.Id)
+}
+
 type PartitionKeyGenerator struct{
 	GenFunc func(uint64) uint64
 	Prefix  string
 }
 
-func Sequence(prefix string) PartitionKeyGenerator {
+func Sequence(prefix string) *PartitionKeyGenerator {
 	current := uint64(0)
 	genFunc := func(max uint64) uint64 {
 		if current > max {
@@ -24,21 +28,21 @@ func Sequence(prefix string) PartitionKeyGenerator {
 		current++
 		return current
 	}
-	return PartitionKeyGenerator{GenFunc:genFunc, Prefix:prefix}
+	return &PartitionKeyGenerator{GenFunc:genFunc, Prefix:prefix}
 }
 
-func Random(prefix string) PartitionKeyGenerator {
+func Random(prefix string) *PartitionKeyGenerator {
 	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
 	genFunc := func(max uint64) uint64 {
 		return uint64(seededRand.Int63n(int64(max)))
 	}
-	return PartitionKeyGenerator{GenFunc:genFunc, Prefix:prefix}
+	return &PartitionKeyGenerator{GenFunc:genFunc, Prefix:prefix}
 }
 
 // TODO func Normal()
 
-func (g *PartitionKeyGenerator) GenerateKey(total uint64, maxId uint64) <-chan *PartitionKey {
-	var i uint64
+func (g *PartitionKeyGenerator) GenerateKey(total int64, maxId uint64) <-chan *PartitionKey {
+	var i int64
 	keys := make(chan *PartitionKey)
 
 	go func() {
