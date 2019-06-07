@@ -4,6 +4,7 @@ import (
 	"github.com/gocql/gocql"
 	"github.com/jsanda/tlp-stress-go/pkg/generators"
 	"github.com/jsanda/tlp-stress-go/pkg/profiles"
+	"github.com/jsanda/tlp-stress-go/pkg/metrics"
 	"log"
 	"gopkg.in/cheggaaa/pb.v1"
 	"time"
@@ -39,6 +40,7 @@ type StressCfg struct {
 	PartitionKeyGenerator string
 	Id                    string
 	Population            int64
+	Metrics               *metrics.Metrics
 }
 
 func NewRuntime(cfg *RuntimeConfig) *Runtime {
@@ -83,8 +85,8 @@ func (r *Runtime) Exec() {
 		PartitionKeyGenerator: r.PartitionKeyGenerator,
 		Id: r.Id,
 		Population: r.Populate,
+		Metrics: metrics.NewMetrics(),
 	}
-
 	runner := createRunners(stressCfg)
 
 	populateData(plugin, runner, r.Populate)

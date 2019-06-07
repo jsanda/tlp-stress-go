@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gocql/gocql"
 	"github.com/jsanda/tlp-stress-go/pkg/generators"
+	"github.com/jsanda/tlp-stress-go/pkg/metrics"
 	"github.com/jsanda/tlp-stress-go/pkg/profiles"
 	"log"
 	"sync"
@@ -17,6 +18,7 @@ type profileRunner struct{
 	StressRunner          profiles.StressRunner
 	Concurrency           int64
 	Session               *gocql.Session
+	Metrics               *metrics.Metrics
 }
 
 func createRunners(cfg *StressCfg) *profileRunner {
@@ -28,6 +30,7 @@ func createRunners(cfg *StressCfg) *profileRunner {
 		StressRunner: cfg.Plugin.Instance.GetRunner(cfg.Registry, cfg.Session),
 		Concurrency: cfg.Concurrency,
 		Session: cfg.Session,
+		Metrics: cfg.Metrics,
 	}
 
 	thread := 0
@@ -70,13 +73,14 @@ func (p *profileRunner) Populate(rows int64, count *int64, done chan struct{}) {
 func (p *profileRunner) applyMutations(wg *sync.WaitGroup, mutations <-chan *profiles.Mutation, count *int64) {
 	for i := int64(0); i < p.Concurrency; i++ {
 		go func() {
+			var err error
 			for mutation := range mutations {
-				if err := mutation.Query.Exec(); err == nil {
-					// TODO record execution time metric
-				} else {
+				p.Metrics.Populate.Time(func() {
+					err = mutation.Query.Exec()
+				})
+				if err != nil {
 					log.Printf("An error occurred prepopulating data: %s\n", err)
-					// TODO record execution time metric
-					// TODO record error metric
+					p.Metrics.Errors.Mark(1)
 				}
 				atomic.AddInt64(count, 1)
 			}
@@ -84,3 +88,4 @@ func (p *profileRunner) applyMutations(wg *sync.WaitGroup, mutations <-chan *pro
 		}()
 	}
 }
+
