@@ -131,7 +131,7 @@ func createFieldRegistry(plugin *profiles.Plugin) *generators.Registry {
 
 func populateData(plugin *profiles.Plugin, runner *profileRunner, populate int64) {
 	if populate > 0 {
-		log.Printf("Prepopulating data with %d records per thread\n", populate)
+		log.Printf("Prepopulating Cassandra with %d records\n", populate)
 		done := make(chan struct{})
 		count := int64(0)
 		bar := pb.StartNew(int(populate))
@@ -148,5 +148,6 @@ func populateData(plugin *profiles.Plugin, runner *profileRunner, populate int64
 		go runner.Populate(populate, &count, done)
 
 		<-done
+		log.Println("Pre-populate complete")
 	}
 }

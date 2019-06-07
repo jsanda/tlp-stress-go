@@ -49,7 +49,6 @@ func createRunners(cfg *StressCfg) *profileRunner {
 
 func (p *profileRunner) Populate(rows int64, count *int64, done chan struct{}) {
 	defer close(done)
-	log.Printf("Populating Cassandra with %d rows\n", rows)
 
 	// TODO maxId needs to be configurable
 	maxId := uint64(100000)
@@ -61,14 +60,11 @@ func (p *profileRunner) Populate(rows int64, count *int64, done chan struct{}) {
 	p.applyMutations(&wg, mutations, count)
 
 	for key := range ch {
-		// Get the next mutation for the key
-		// Execute the query for the mutation
 		op := p.StressRunner.GetNextMutation(key)
 		mutations <- op
 	}
 	close(mutations)
 	wg.Wait()
-	log.Printf("POPULATION: %d\n", p.Population)
 }
 
 func (p *profileRunner) applyMutations(wg *sync.WaitGroup, mutations <-chan *profiles.Mutation, count *int64) {
@@ -83,8 +79,6 @@ func (p *profileRunner) applyMutations(wg *sync.WaitGroup, mutations <-chan *pro
 					// TODO record error metric
 				}
 				atomic.AddInt64(count, 1)
-				//atomic.AddUint64(counter, 1)
-				//p.Population++
 			}
 			wg.Done()
 		}()
