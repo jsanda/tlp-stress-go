@@ -58,8 +58,7 @@ func (p *profileRunner) Populate(rows int64, done chan struct{}) {
 
 	wg.Add(int(p.Concurrency))
 
-	p.applyMutations(wg, mutations)
-	defer close(mutations)
+	p.applyMutations(&wg, mutations)
 
 	for key := range ch {
 		// Get the next mutation for the key
@@ -67,10 +66,11 @@ func (p *profileRunner) Populate(rows int64, done chan struct{}) {
 		op := p.StressRunner.GetNextMutation(key)
 		mutations <- op
 	}
+	close(mutations)
 	wg.Wait()
 }
 
-func (p *profileRunner) applyMutations(wg sync.WaitGroup, mutations <-chan *profiles.Mutation) {
+func (p *profileRunner) applyMutations(wg *sync.WaitGroup, mutations <-chan *profiles.Mutation) {
 	for i := int64(0); i < p.Concurrency; i++ {
 		go func() {
 			for mutation := range mutations {
