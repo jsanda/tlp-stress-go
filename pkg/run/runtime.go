@@ -133,6 +133,7 @@ func populateData(plugin *profiles.Plugin, runner *profileRunner, populate int64
 	if populate > 0 {
 		log.Printf("Prepopulating data with %d records per thread\n", populate)
 		done := make(chan struct{})
+		count := int64(0)
 		bar := pb.StartNew(int(populate))
 
 		ticker := time.NewTicker(1 * time.Second)
@@ -140,11 +141,11 @@ func populateData(plugin *profiles.Plugin, runner *profileRunner, populate int64
 		go func() {
 			for range ticker.C {
 				// TODO hook in metrics here so we can update the progress bard with the count of the population metric
-				bar.Set64(runner.Population)
+				bar.Set64(count)
 			}
 		}()
 
-		go runner.Populate(populate, done)
+		go runner.Populate(populate, &count, done)
 
 		<-done
 	}

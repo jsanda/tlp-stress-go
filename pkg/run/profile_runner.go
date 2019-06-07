@@ -7,6 +7,7 @@ import (
 	"github.com/jsanda/tlp-stress-go/pkg/profiles"
 	"log"
 	"sync"
+	"sync/atomic"
 )
 
 type profileRunner struct{
@@ -46,7 +47,7 @@ func createRunners(cfg *StressCfg) *profileRunner {
 	return runner
 }
 
-func (p *profileRunner) Populate(rows int64, done chan struct{}) {
+func (p *profileRunner) Populate(rows int64, count *int64, done chan struct{}) {
 	defer close(done)
 	log.Printf("Populating Cassandra with %d rows\n", rows)
 
@@ -57,8 +58,7 @@ func (p *profileRunner) Populate(rows int64, done chan struct{}) {
 	var wg sync.WaitGroup
 
 	wg.Add(int(p.Concurrency))
-
-	p.applyMutations(&wg, mutations)
+	p.applyMutations(&wg, mutations, count)
 
 	for key := range ch {
 		// Get the next mutation for the key
@@ -68,9 +68,10 @@ func (p *profileRunner) Populate(rows int64, done chan struct{}) {
 	}
 	close(mutations)
 	wg.Wait()
+	log.Printf("POPULATION: %d\n", p.Population)
 }
 
-func (p *profileRunner) applyMutations(wg *sync.WaitGroup, mutations <-chan *profiles.Mutation) {
+func (p *profileRunner) applyMutations(wg *sync.WaitGroup, mutations <-chan *profiles.Mutation, count *int64) {
 	for i := int64(0); i < p.Concurrency; i++ {
 		go func() {
 			for mutation := range mutations {
@@ -81,7 +82,9 @@ func (p *profileRunner) applyMutations(wg *sync.WaitGroup, mutations <-chan *pro
 					// TODO record execution time metric
 					// TODO record error metric
 				}
-				p.Population++
+				atomic.AddInt64(count, 1)
+				//atomic.AddUint64(counter, 1)
+				//p.Population++
 			}
 			wg.Done()
 		}()
