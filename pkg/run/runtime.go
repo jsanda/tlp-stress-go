@@ -45,6 +45,7 @@ type StressCfg struct {
 	Metrics               *metrics.Metrics
 	Duration              uint64
 	Iterations            uint64
+	Partitions            uint64
 }
 
 func NewRuntime(cfg *RuntimeConfig) *Runtime {
@@ -92,6 +93,7 @@ func (r *Runtime) Exec() {
 		Metrics: metrics.NewMetrics(),
 		Duration: r.Duration,
 		Iterations: r.Iterations,
+		Partitions: r.Partitions,
 	}
 	runner := createRunners(stressCfg)
 

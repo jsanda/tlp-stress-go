@@ -16,17 +16,25 @@ type Custom struct{
 	Rows uint64
 }
 
+type OperationType int16
+
+const (
+	Mutation = iota
+	Query
+)
+
 type Operation struct {
-	Query *gocql.Query
+	Query          *gocql.Query
+	OperationType
 }
 
-type Mutation struct {
-	Operation
-}
-
-type Select struct {
-	Operation
-}
+//type Mutation struct {
+//	Operation
+//}
+//
+//type Select struct {
+//	Operation
+//}
 
 type StressProfile interface {
 	// gocql automatically prepares queries so we do not need to port this
@@ -42,9 +50,9 @@ type StressProfile interface {
 }
 
 type StressRunner interface {
-	GetNextMutation(key *generators.PartitionKey) *Mutation
+	GetNextMutation(key *generators.PartitionKey) *Operation
 
-	GetNextSelect(key *generators.PartitionKey) *Select
+	GetNextSelect(key *generators.PartitionKey) *Operation
 }
 
 type Plugin struct {

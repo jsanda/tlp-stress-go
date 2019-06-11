@@ -43,15 +43,15 @@ type stressRunner struct {
 	session   *gocql.Session
 }
 
-func (s *stressRunner) GetNextMutation(key *generators.PartitionKey) *Mutation {
+func (s *stressRunner) GetNextMutation(key *generators.PartitionKey) *Operation {
 	data := s.dataField.GetText()
 	timestamp := gocql.TimeUUID()
 	query := s.session.Query("INSERT INTO sensor_data (sensor_id, timestamp, data) VALUES (?, ?, ?)",
 		key.GetText(), timestamp, data)
 
-	return &Mutation{Operation{Query: query}}
+	return &Operation{query, Mutation}
 }
 
-func (s *stressRunner) GetNextSelect(key *generators.PartitionKey) *Select {
+func (s *stressRunner) GetNextSelect(key *generators.PartitionKey) *Operation {
 	return nil
 }

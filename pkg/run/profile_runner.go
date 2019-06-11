@@ -6,9 +6,12 @@ import (
 	"github.com/jsanda/tlp-stress-go/pkg/generators"
 	"github.com/jsanda/tlp-stress-go/pkg/metrics"
 	"github.com/jsanda/tlp-stress-go/pkg/profiles"
+	//gometrics "github.com/rcrowley/go-metrics"
 	"log"
+	//"math/rand"
 	"sync"
 	"sync/atomic"
+	//"time"
 )
 
 type profileRunner struct{
@@ -21,6 +24,7 @@ type profileRunner struct{
 	Metrics               *metrics.Metrics
 	Duration              uint64
 	Iterations            uint64
+	Partitions            uint64
 }
 
 func createRunners(cfg *StressCfg) *profileRunner {
@@ -35,6 +39,7 @@ func createRunners(cfg *StressCfg) *profileRunner {
 		Metrics: cfg.Metrics,
 		Duration: cfg.Duration,
 		Iterations: cfg.Iterations,
+		Partitions: cfg.Partitions,
 	}
 
 	thread := 0
@@ -60,25 +65,25 @@ func (p *profileRunner) Populate(rows uint64, count *int64, done chan struct{}) 
 	// TODO maxId needs to be configurable
 	maxId := uint64(100000)
 	ch := p.PartitionKeyGenerator.GenerateKey(rows, maxId)
-	mutations := make(chan *profiles.Mutation)
+	ops := make(chan *profiles.Operation)
 	var wg sync.WaitGroup
 
 	wg.Add(int(p.Concurrency))
-	p.applyMutations(&wg, mutations, count)
+	p.applyMutations(&wg, ops, count)
 
 	for key := range ch {
 		op := p.StressRunner.GetNextMutation(key)
-		mutations <- op
+		ops <- op
 	}
-	close(mutations)
+	close(ops)
 	wg.Wait()
 }
 
-func (p *profileRunner) applyMutations(wg *sync.WaitGroup, mutations <-chan *profiles.Mutation, count *int64) {
+func (p *profileRunner) applyMutations(wg *sync.WaitGroup, ops <-chan *profiles.Operation, count *int64) {
 	for i := uint64(0); i < p.Concurrency; i++ {
 		go func() {
 			var err error
-			for mutation := range mutations {
+			for mutation := range ops {
 				p.Metrics.Populate.Time(func() {
 					err = mutation.Query.Exec()
 				})
@@ -94,12 +99,33 @@ func (p *profileRunner) applyMutations(wg *sync.WaitGroup, mutations <-chan *pro
 }
 
 func (p *profileRunner) Run() {
-	if p.Duration == 0 {
-		log.Printf("Running the profile for %d iterations...\n", p.Iterations)
-	} else {
-		log.Printf("Running the profile for %dmin\n", p.Duration)
-	}
-
-	
+//	if p.Duration == 0 {
+//		log.Printf("Running the profile for %d iterations...\n", p.Iterations)
+//	} else {
+//		log.Printf("Running the profile for %dmin\n", p.Duration)
+//	}
+//
+//	totalValues := p.Iterations
+//	ch := p.PartitionKeyGenerator.GenerateKey(totalValues, p.Partitions)
+//	readRate := float64(0.1)
+//	rand := rand.New(rand.NewSource(time.Now().UnixNano()))
+//	operations := make(chan *profiles.Operation)
+//	var wg sync.WaitGroup
+//
+//	wg.Add(int(p.Concurrency))
+//	p.execOperations(&wg, )
+//
+//	for key := range ch {
+//		if int32(readRate * 100) > rand.Int31n(100) {
+//			read := p.StressRunner.GetNextSelect(key)
+//			op =
+//		} else {
+//			op = p.StressRunner.GetNextMutation(key)
+//		}
+//	}
 }
+//
+//func (p *profileRunner) execOperations(wg *sync.WaitGroup, ops <- chan *profiles.Operation, timer *gometrics.Timer) {
+//
+//}
 
