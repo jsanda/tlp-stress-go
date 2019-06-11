@@ -41,8 +41,8 @@ func Random(prefix string) *PartitionKeyGenerator {
 
 // TODO func Normal()
 
-func (g *PartitionKeyGenerator) GenerateKey(total int64, maxId uint64) <-chan *PartitionKey {
-	var i int64
+func (g *PartitionKeyGenerator) GenerateKey(total uint64, maxId uint64) <-chan *PartitionKey {
+	var i uint64
 	keys := make(chan *PartitionKey)
 
 	go func() {

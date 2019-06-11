@@ -13,11 +13,13 @@ import (
 type RuntimeConfig struct {
 	Profile               string
 	CqlConfig
-	Populate              int64
-	Partitions            int64
-	Concurrency           int64
+	Populate              uint64
+	Partitions            uint64
+	Concurrency           uint64
 	PartitionKeyGenerator string
 	Id                    string
+	Duration              uint64
+	Iterations            uint64
 }
 
 type CqlConfig struct {
@@ -36,11 +38,13 @@ type StressCfg struct {
 	Session               *gocql.Session
 	Registry              *generators.Registry
 	Plugin                *profiles.Plugin
-	Concurrency           int64
+	Concurrency           uint64
 	PartitionKeyGenerator string
 	Id                    string
-	Population            int64
+	Population            uint64
 	Metrics               *metrics.Metrics
+	Duration              uint64
+	Iterations            uint64
 }
 
 func NewRuntime(cfg *RuntimeConfig) *Runtime {
@@ -86,11 +90,16 @@ func (r *Runtime) Exec() {
 		Id: r.Id,
 		Population: r.Populate,
 		Metrics: metrics.NewMetrics(),
+		Duration: r.Duration,
+		Iterations: r.Iterations,
 	}
 	runner := createRunners(stressCfg)
 
 	populateData(plugin, runner, r.Populate)
-	//log.Println("Done!")
+
+	log.Println("Starting main runner...")
+
+	runner.Run()
 }
 
 func (r *Runtime) createKeyspace(session *gocql.Session, ) {
@@ -131,7 +140,7 @@ func createFieldRegistry(plugin *profiles.Plugin) *generators.Registry {
 	return registry
 }
 
-func populateData(plugin *profiles.Plugin, runner *profileRunner, populate int64) {
+func populateData(plugin *profiles.Plugin, runner *profileRunner, populate uint64) {
 	if populate > 0 {
 		log.Printf("Prepopulating Cassandra with %d records\n", populate)
 		done := make(chan struct{})

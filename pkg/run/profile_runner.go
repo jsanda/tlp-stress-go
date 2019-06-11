@@ -12,13 +12,15 @@ import (
 )
 
 type profileRunner struct{
-	Population            int64
+	Population            uint64
 	PartitionKeyGenerator *generators.PartitionKeyGenerator
 	Profile               profiles.StressProfile
 	StressRunner          profiles.StressRunner
-	Concurrency           int64
+	Concurrency           uint64
 	Session               *gocql.Session
 	Metrics               *metrics.Metrics
+	Duration              uint64
+	Iterations            uint64
 }
 
 func createRunners(cfg *StressCfg) *profileRunner {
@@ -31,6 +33,8 @@ func createRunners(cfg *StressCfg) *profileRunner {
 		Concurrency: cfg.Concurrency,
 		Session: cfg.Session,
 		Metrics: cfg.Metrics,
+		Duration: cfg.Duration,
+		Iterations: cfg.Iterations,
 	}
 
 	thread := 0
@@ -50,7 +54,7 @@ func createRunners(cfg *StressCfg) *profileRunner {
 	return runner
 }
 
-func (p *profileRunner) Populate(rows int64, count *int64, done chan struct{}) {
+func (p *profileRunner) Populate(rows uint64, count *int64, done chan struct{}) {
 	defer close(done)
 
 	// TODO maxId needs to be configurable
@@ -71,7 +75,7 @@ func (p *profileRunner) Populate(rows int64, count *int64, done chan struct{}) {
 }
 
 func (p *profileRunner) applyMutations(wg *sync.WaitGroup, mutations <-chan *profiles.Mutation, count *int64) {
-	for i := int64(0); i < p.Concurrency; i++ {
+	for i := uint64(0); i < p.Concurrency; i++ {
 		go func() {
 			var err error
 			for mutation := range mutations {
@@ -87,5 +91,15 @@ func (p *profileRunner) applyMutations(wg *sync.WaitGroup, mutations <-chan *pro
 			wg.Done()
 		}()
 	}
+}
+
+func (p *profileRunner) Run() {
+	if p.Duration == 0 {
+		log.Printf("Running the profile for %d iterations...\n", p.Iterations)
+	} else {
+		log.Printf("Running the profile for %dmin\n", p.Duration)
+	}
+
+	
 }
 
