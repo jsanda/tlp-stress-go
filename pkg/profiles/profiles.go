@@ -20,7 +20,7 @@ type OperationType int16
 
 const (
 	Mutation = iota
-	Query
+	Select
 )
 
 type Operation struct {

@@ -53,5 +53,8 @@ func (s *stressRunner) GetNextMutation(key *generators.PartitionKey) *Operation 
 }
 
 func (s *stressRunner) GetNextSelect(key *generators.PartitionKey) *Operation {
-	return nil
+	// TODO make the limit configurable
+	limit := 500
+	query := s.session.Query("SELECT * from sensor_data WHERE sensor_id = ? LIMIT ?", key, limit)
+	return &Operation{query, Select}
 }
