@@ -97,7 +97,7 @@ func (r *Runtime) Exec() {
 	}
 	runner := createRunners(stressCfg)
 
-	populateData(plugin, runner, r.Populate)
+	populateData(runner, r.Populate)
 
 	log.Println("Starting main runner...")
 
@@ -142,7 +142,7 @@ func createFieldRegistry(plugin *profiles.Plugin) *generators.Registry {
 	return registry
 }
 
-func populateData(plugin *profiles.Plugin, runner *profileRunner, populate uint64) {
+func populateData(runner *profileRunner, populate uint64) {
 	if populate > 0 {
 		log.Printf("Prepopulating Cassandra with %d records\n", populate)
 		done := make(chan struct{})
