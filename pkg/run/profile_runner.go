@@ -6,11 +6,10 @@ import (
 	"github.com/jsanda/tlp-stress-go/pkg/generators"
 	"github.com/jsanda/tlp-stress-go/pkg/metrics"
 	"github.com/jsanda/tlp-stress-go/pkg/profiles"
-	//gometrics "github.com/rcrowley/go-metrics"
+	gometrics "github.com/rcrowley/go-metrics"
 	"log"
 	//"math/rand"
 	"sync"
-	"sync/atomic"
 	//"time"
 )
 
@@ -59,7 +58,7 @@ func createRunners(cfg *StressCfg) *profileRunner {
 	return runner
 }
 
-func (p *profileRunner) Populate(rows uint64, count *int64, done chan struct{}) {
+func (p *profileRunner) Populate(rows uint64, done chan struct{}) {
 	defer close(done)
 
 	// TODO maxId needs to be configurable
@@ -69,7 +68,7 @@ func (p *profileRunner) Populate(rows uint64, count *int64, done chan struct{}) 
 	var wg sync.WaitGroup
 
 	wg.Add(int(p.Concurrency))
-	p.applyMutations(&wg, ops, count)
+	p.execOperations(&wg, ops, p.Metrics.Populate, p.Metrics.PopulateCount)
 
 	for key := range ch {
 		op := p.StressRunner.GetNextMutation(key)
@@ -79,19 +78,20 @@ func (p *profileRunner) Populate(rows uint64, count *int64, done chan struct{}) 
 	wg.Wait()
 }
 
-func (p *profileRunner) applyMutations(wg *sync.WaitGroup, ops <-chan *profiles.Operation, count *int64) {
+func (p *profileRunner) execOperations(wg *sync.WaitGroup, ops <-chan *profiles.Operation, timer gometrics.Timer,
+	counter gometrics.Counter) {
 	for i := uint64(0); i < p.Concurrency; i++ {
 		go func() {
 			var err error
 			for mutation := range ops {
-				p.Metrics.Populate.Time(func() {
+				timer.Time(func() {
 					err = mutation.Query.Exec()
 				})
 				if err != nil {
 					log.Printf("An error occurred prepopulating data: %s\n", err)
 					p.Metrics.Errors.Mark(1)
 				}
-				atomic.AddInt64(count, 1)
+				counter.Inc(1)
 			}
 			wg.Done()
 		}()
@@ -124,8 +124,4 @@ func (p *profileRunner) Run() {
 //		}
 //	}
 }
-//
-//func (p *profileRunner) execOperations(wg *sync.WaitGroup, ops <- chan *profiles.Operation, timer *gometrics.Timer) {
-//
-//}
 

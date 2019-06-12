@@ -146,7 +146,6 @@ func populateData(plugin *profiles.Plugin, runner *profileRunner, populate uint6
 	if populate > 0 {
 		log.Printf("Prepopulating Cassandra with %d records\n", populate)
 		done := make(chan struct{})
-		count := int64(0)
 		bar := pb.StartNew(int(populate))
 
 		ticker := time.NewTicker(1 * time.Second)
@@ -154,11 +153,11 @@ func populateData(plugin *profiles.Plugin, runner *profileRunner, populate uint6
 		go func() {
 			for range ticker.C {
 				// TODO hook in metrics here so we can update the progress bard with the count of the population metric
-				bar.Set64(count)
+				bar.Set64(runner.Metrics.PopulateCount.Count())
 			}
 		}()
 
-		go runner.Populate(populate, &count, done)
+		go runner.Populate(populate, done)
 
 		<-done
 		log.Println("Pre-populate complete")

@@ -8,11 +8,14 @@ import (
 )
 
 type Metrics struct {
-	Registry  gometrics.Registry
-	Errors    gometrics.Meter
-	Mutations gometrics.Timer
-	Selects   gometrics.Timer
-	Populate  gometrics.Timer
+	Registry       gometrics.Registry
+	Errors         gometrics.Meter
+	Mutations      gometrics.Timer
+	MutationsCount gometrics.Counter
+	Selects        gometrics.Timer
+	SelectsCount   gometrics.Counter
+	Populate       gometrics.Timer
+	PopulateCount  gometrics.Counter
 }
 
 func NewMetrics() *Metrics {
@@ -24,7 +27,10 @@ func NewMetrics() *Metrics {
 		Registry: registry,
 		Errors: gometrics.NewRegisteredMeter("errors", registry),
 		Mutations: gometrics.NewRegisteredTimer("mutations", registry),
+		MutationsCount: gometrics.NewRegisteredCounter("mutationsCount", registry),
 		Selects: gometrics.NewRegisteredTimer("selects", registry),
-		Populate: gometrics.NewRegisteredTimer("populateMutations", registry),
+		SelectsCount: gometrics.NewRegisteredCounter("selectsCount", registry),
+		Populate: gometrics.NewRegisteredTimer("populate", registry),
+		PopulateCount: gometrics.NewRegisteredCounter("populateCount", registry),
 	}
 }
